@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Ultimate Slime Ecosystem V45.0 - RTS操作與神聖物種</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #87CEEB; color: #fff; font-family: 'Segoe UI', sans-serif; user-select: none; }
+        #ui { position: absolute; top: 10px; left: 10px; background: rgba(15,20,25,0.85); backdrop-filter: blur(10px); padding: 15px; border-radius: 12px; border: 1px solid #555; pointer-events: none; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.5); min-width: 340px; }
+        .title { font-size: 18px; font-weight: bold; color: #fff; margin-bottom: 2px; }
+        .subtitle { font-size: 11px; color: #ffeb3b; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-box { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 5px; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 6px; }
+        .stat { text-align: center; } .stat-val { font-size: 14px; font-weight: bold; }
+        .c-g { color: #8bc34a; } .c-r { color: #f44336; } .c-b { color: #03a9f4; } .c-y { color: #ffeb3b; } .c-p { color: #9c27b0; } .c-w { color: #eeeeee; }
+        .nest-box { font-size: 11px; color: #eee; background: rgba(255,255,255,0.1); padding: 6px; border-radius: 4px; margin-bottom: 10px; line-height: 1.5;}
+        .cat { font-size: 11px; color: #aaa; margin: 6px 0 4px 0; border-bottom: 1px solid #444; padding-bottom: 2px; }
+        .weapon-btn { margin-top: 3px; padding: 4px 6px; border: 1px solid #444; border-radius: 4px; font-size: 11px; color: #ccc; transition: 0.2s; display: inline-block;}
+        .active { border-color: #fff !important; color: #fff !important; font-weight: bold; }
+        .wq { background: #4CAF50; } .we { background: #2196F3; } .wr { background: #795548; }
+        .w1 { background: #8bc34a; color:#000; } .w2 { background: #f44336; } .w3 { background: #03a9f4; }
+        .w4 { background: #ffeb3b; color:#000; } .w5 { background: #9c27b0; } .w6 { background: #eeeeee; color:#000; }
+        .wf { background: #ff5722; } .wv { background: #33ff00; color:#000; } .wt { background: #607d8b; }
+        #weather-info { font-size: 13px; font-weight: bold; color: #ffeb3b; margin-top: 10px; text-align: center; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 4px; }
+        #error-log { display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#ff5555; background:rgba(0,0,0,0.9); padding:20px; font-family:monospace; z-index:9999; border:2px solid #ff5555; border-radius:8px; white-space:pre-wrap; }
+    </style>
+</head>
+<body>
+<div id="error-log"></div>
+<div id="ui">
+    <div class="title">史萊姆文明 V45.0</div>
+    <div class="subtitle">RTS操作 / ⚪神聖淨化者</div>
+    <div class="stat-box">
+        <div class="stat"><div style="font-size:10px;" class="c-g">綠</div><div id="c-0" class="stat-val c-g">0</div></div>
+        <div class="stat"><div style="font-size:10px;" class="c-r">紅</div><div id="c-1" class="stat-val c-r">0</div></div>
+        <div class="stat"><div style="font-size:10px;" class="c-b">藍</div><div id="c-2" class="stat-val c-b">0</div></div>
+        <div class="stat"><div style="font-size:10px;" class="c-y">黃</div><div id="c-3" class="stat-val c-y">0</div></div>
+        <div class="stat"><div style="font-size:10px;" class="c-p">紫</div><div id="c-4" class="stat-val c-p">0</div></div>
+        <div class="stat"><div style="font-size:10px;" class="c-w">白</div><div id="c-5" class="stat-val c-w">0</div></div>
+    </div>
+    <div class="nest-box">
+        ⚪ <strong>白史萊姆</strong>：和平物種。喝水維生，能隔空吸走並淨化附近同伴身上的病毒！
+    </div>
+    <div class="cat">物種投放 (1~6) + Space施放</div>
+    <div id="btn-s0" class="weapon-btn w1">[1] 🟢平原</div>
+    <div id="btn-s1" class="weapon-btn w2">[2] 🔴掠食</div>
+    <div id="btn-s2" class="weapon-btn w3">[3] 🔵水行</div>
+    <div id="btn-s3" class="weapon-btn w4">[4] 🟡迅捷</div>
+    <div id="btn-s4" class="weapon-btn w5">[5] 🟣劇毒</div>
+    <div id="btn-s5" class="weapon-btn w6">[6] ⚪淨化</div>
+
+    <div class="cat">地形塑造 (Q, E, R)</div>
+    <div id="btn-t1" class="weapon-btn wq active">[Q] 🌱播種</div>
+    <div id="btn-t2" class="weapon-btn we">[E] 💧挖水</div>
+    <div id="btn-t3" class="weapon-btn wr">[R] ⛰️造山</div>
+
+    <div class="cat">天災與氣候 (F, V, T)</div>
+    <div id="btn-m0" class="weapon-btn wf">[F] ☄️ 隕石</div>
+    <div id="btn-v0" class="weapon-btn wv">[V] ☣️ 病毒</div>
+    <div id="btn-w0" class="weapon-btn wt">[T] 轉變天氣</div>
+
+    <div id="weather-info">☀️ 晴天 (生態平穩)</div>
+    <div style="font-size: 11px; color:#aaa; margin-top: 10px;">• <span style="color:#ffeb3b">WASD</span>：上帝視角平移 • <span style="color:#ffeb3b">滾輪</span>：縮放</div>
+</div>
+
+<script>
+    window.onerror = function(msg, url, line) {
+        document.getElementById('error-log').style.display = 'block';
+        document.getElementById('error-log').innerText = "系統崩潰！\n錯誤: " + msg + "\n行數: " + line;
+    };
+</script>
+
+<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const CONF = { GRID: 40, SIZE: 0.6, MAX_SLIMES: 400, NEST_BASE_RADIUS: 5, NEST_SPAWN_KNIGHT: 1800, SPEED_FACTOR: 0.6, ENERGY_SPLIT: 140 };
+    const MAP_OFFSET = (CONF.GRID * CONF.SIZE) / 2;
+    const BOUNDARY = MAP_OFFSET - CONF.SIZE/2;
+    const nestColors = [0x8bc34a, 0xf44336, 0x03a9f4, 0xffeb3b, 0x9c27b0, 0xeeeeee]; // 加入白色
+    
+    let frameCount = 0, scene, camera, renderer, controls, cursor;
+    let blockMesh, slimeMesh, sparkMesh, weatherPoints, nestMesh, airWallMesh, towerMesh;
+    let blocks = [], slimes = [], sparks = [], meteors = [], nests = []; 
+    let mouse = new THREE.Vector2(), raycaster = new THREE.Raycaster();
+    
+    // 操作狀態管理
+    let currentPower = { type: 'terrain', val: 1, btnId: 'btn-t1' }; 
+    let keys = { w: false, a: false, s: false, d: false, space: false }; 
+    let weatherState = 0; 
+    const weatherNames = ["☀️ 晴朗 (生態平穩)", "🌧️ 暴雨 (草皮瘋長)", "❄️ 暴雪 (萬物遲緩)"];
+    const uiCount = [document.getElementById('c-0'), document.getElementById('c-1'), document.getElementById('c-2'), document.getElementById('c-3'), document.getElementById('c-4'), document.getElementById('c-5')];
+
+    init();
+    animate();
+
+    function init() {
+        scene = new THREE.Scene(); scene.background = new THREE.Color(0x87CEEB); scene.fog = new THREE.Fog(0x87CEEB, 40, 90);
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000); camera.position.set(20, 25, 30);
+        renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+        controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true; controls.dampingFactor = 0.08; controls.enablePan = false; controls.maxPolarAngle = Math.PI / 2.2;
+        
+        scene.add(new THREE.AmbientLight(0x666666));
+        const sun = new THREE.DirectionalLight(0xffffff, 1.4); sun.position.set(30, 50, 30); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); scene.add(sun);
+        cursor = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.2, 16, 32), new THREE.MeshBasicMaterial({ color: 0x4CAF50, transparent: true, opacity: 0.8 }));
+        cursor.rotation.x = -Math.PI / 2; cursor.position.y = 5; scene.add(cursor);
+
+        airWallMesh = new THREE.Mesh(new THREE.BoxGeometry(CONF.GRID*CONF.SIZE, 40, CONF.GRID*CONF.SIZE), new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.05, side: THREE.BackSide, wireframe: true }));
+        airWallMesh.position.y = 10; scene.add(airWallMesh);
+
+        const totalBlocks = CONF.GRID * CONF.GRID;
+        blockMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(CONF.SIZE, CONF.SIZE, CONF.SIZE), new THREE.MeshStandardMaterial({ roughness: 0.8 }), totalBlocks);
+        blockMesh.receiveShadow = true; blockMesh.castShadow = true;
+        for(let i=0; i<totalBlocks; i++) blockMesh.setColorAt(i, new THREE.Color());
+        
+        const dummy = new THREE.Object3D();
+        for(let i = 0; i < totalBlocks; i++) {
+            const x = i % CONF.GRID, z = Math.floor(i / CONF.GRID);
+            let h = Math.sin(x/CONF.GRID*Math.PI*4)*Math.cos(z/CONF.GRID*Math.PI*4)*2 + Math.sin(x/CONF.GRID*Math.PI*4*2.5)*0.5;
+            let yStep = Math.floor(h), type = 0; 
+            if(yStep < -1) { type = 2; yStep = -1; } else if(yStep >= 1) type = 3; else if(Math.random() > 0.6) type = 1; 
+            
+            const pos = new THREE.Vector3(x*CONF.SIZE - MAP_OFFSET, yStep*CONF.SIZE, z*CONF.SIZE - MAP_OFFSET);
+            blocks.push({ x, z, yStep, pos, type, color: new THREE.Color() });
+            dummy.position.copy(pos); if(type === 2) dummy.position.y -= CONF.SIZE * 0.3;
+            dummy.updateMatrix(); blockMesh.setMatrixAt(i, dummy.matrix); updateBlockColor(i, type);
+        }
+        scene.add(blockMesh);
+
+        slimeMesh = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(CONF.SIZE * 0.45), new THREE.MeshStandardMaterial({ roughness: 0.3 }), CONF.MAX_SLIMES);
+        slimeMesh.castShadow = true; for(let i=0; i<CONF.MAX_SLIMES; i++) slimeMesh.setColorAt(i, new THREE.Color()); scene.add(slimeMesh);
+
+        sparkMesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.15, 0), new THREE.MeshBasicMaterial(), 1500);
+        for(let i=0; i<1500; i++) { sparks.push({ pos: new THREE.Vector3(0,-10,0), vel: new THREE.Vector3(), life: 0, color: new THREE.Color() }); sparkMesh.setColorAt(i, new THREE.Color()); }
+        scene.add(sparkMesh);
+
+        const torusGeo = new THREE.TorusGeometry(1, 0.05, 16, 32); torusGeo.rotateX(-Math.PI / 2); 
+        nestMesh = new THREE.InstancedMesh(torusGeo, new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.5 }), 50); 
+        for(let i=0; i<50; i++) nestMesh.setColorAt(i, new THREE.Color()); scene.add(nestMesh);
+        
+        const tGeo = new THREE.CylinderGeometry(0.2, 0.4, 2, 8); tGeo.translate(0, 1, 0);
+        towerMesh = new THREE.InstancedMesh(tGeo, new THREE.MeshStandardMaterial({ roughness: 0.5, metalness: 0.2 }), 50);
+        towerMesh.castShadow = true;
+        for(let i=0; i<50; i++) towerMesh.setColorAt(i, new THREE.Color()); scene.add(towerMesh);
+
+        const wPos = new Float32Array(6000); for(let i=0; i<6000; i++) wPos[i] = (Math.random()-0.5)*50;
+        const wGeo = new THREE.BufferGeometry(); wGeo.setAttribute('position', new THREE.BufferAttribute(wPos, 3));
+        weatherPoints = new THREE.Points(wGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.15, transparent: true, opacity: 0 })); scene.add(weatherPoints);
+
+        // 新版 RTS 按鍵綁定
+        window.addEventListener('mousemove', e => { mouse.x = (e.clientX/window.innerWidth)*2-1; mouse.y = -(e.clientY/window.innerHeight)*2+1; });
+        window.addEventListener('keydown', e => {
+            if(e.code === 'KeyW') keys.w = true; if(e.code === 'KeyS') keys.s = true;
+            if(e.code === 'KeyA') keys.a = true; if(e.code === 'KeyD') keys.d = true;
+            if(e.code === 'Space' && !keys.space) { keys.space = true; triggerGodPower(); }
+            
+            const actionMap = {
+                'Digit1': {type:'slime', val:0, btn:'btn-s0', color:0x4CAF50},
+                'Digit2': {type:'slime', val:1, btn:'btn-s1', color:0xf44336},
+                'Digit3': {type:'slime', val:2, btn:'btn-s2', color:0x03a9f4},
+                'Digit4': {type:'slime', val:3, btn:'btn-s3', color:0xffeb3b},
+                'Digit5': {type:'slime', val:4, btn:'btn-s4', color:0x9c27b0},
+                'Digit6': {type:'slime', val:5, btn:'btn-s5', color:0xeeeeee}, // 新增白史萊姆
+                'KeyQ': {type:'terrain', val:1, btn:'btn-t1', color:0x4CAF50},
+                'KeyE': {type:'terrain', val:2, btn:'btn-t2', color:0x2196F3},
+                'KeyR': {type:'terrain', val:3, btn:'btn-t3', color:0x795548},
+                'KeyF': {type:'meteor', val:0, btn:'btn-m0', color:0xff5722},
+                'KeyV': {type:'virus', val:0, btn:'btn-v0', color:0x33ff00},
+                'KeyT': {type:'weather'}
+            };
+
+            if(actionMap[e.code]) {
+                const act = actionMap[e.code];
+                if(act.type === 'weather') {
+                    toggleWeather();
+                } else {
+                    currentPower = act;
+                    document.querySelectorAll('.weapon-btn').forEach(b => b.classList.remove('active'));
+                    document.getElementById(act.btn).classList.add('active');
+                    cursor.material.color.setHex(act.color);
+                }
+            }
+        });
+        window.addEventListener('keyup', e => { 
+            if(e.code === 'KeyW') keys.w = false; if(e.code === 'KeyS') keys.s = false; 
+            if(e.code === 'KeyA') keys.a = false; if(e.code === 'KeyD') keys.d = false; 
+            if(e.code === 'Space') keys.space = false; 
+        });
+        
+        for(let i=0; i<30; i++) spawnSlime(0, getRandomPos()); 
+        for(let i=0; i<3; i++) spawnSlime(1, getRandomPos());  
+        for(let i=0; i<2; i++) spawnSlime(5, getRandomPos()); // 投放初始白史萊姆
+    }
+
+    function getRandomPos() { const b = blocks[Math.floor(Math.random()*blocks.length)]; return new THREE.Vector3(b.pos.x, b.pos.y + 1.5, b.pos.z); }
+
+    function updateBlockColor(idx, type) {
+        const b = blocks[idx];
+        if(weatherState === 2 && type !== 2) b.color.setHex(type === 3 ? 0xdddddd : 0xeeeeee);
+        else b.color.setHex(type===0?0x795548:type===1?0x4CAF50:type===2?0x1976D2:0x607D8B); 
+        blockMesh.setColorAt(idx, b.color);
+    }
+
+    function toggleWeather() {
+        weatherState = (weatherState + 1) % 3; document.getElementById('weather-info').innerText = weatherNames[weatherState];
+        scene.fog.color.setHex(weatherState===0?0x87CEEB:weatherState===1?0x455A64:0xdcedc8); scene.background.setHex(scene.fog.color.getHex());
+        weatherPoints.material.opacity = weatherState===0?0:weatherState===1?0.6:0.8; weatherPoints.material.color.setHex(weatherState===1?0x80d8ff:0xffffff);
+        blocks.forEach((b, i) => updateBlockColor(i, b.type)); if(blockMesh.instanceColor) blockMesh.instanceColor.needsUpdate = true;
+    }
+
+    function triggerGodPower() {
+        const cPos = cursor.position.clone(); cPos.y = 0;
+        
+        if(currentPower.type === 'terrain') { 
+            const t = currentPower.val; const dummy = new THREE.Object3D();
+            blocks.forEach((b, i) => { 
+                if(new THREE.Vector2(b.pos.x, b.pos.z).distanceTo(new THREE.Vector2(cPos.x, cPos.z)) < 3) { 
+                    b.type = t; if(t===3) b.yStep++; if(t===2) b.yStep--; b.pos.y = b.yStep * CONF.SIZE;
+                    updateBlockColor(i, t); dummy.position.copy(b.pos); if(t === 2) dummy.position.y -= CONF.SIZE * 0.3; 
+                    dummy.updateMatrix(); blockMesh.setMatrixAt(i, dummy.matrix); spawnSparks(b.pos, 1, 0xffffff); 
+                } 
+            });
+            if (blockMesh.instanceColor) blockMesh.instanceColor.needsUpdate = true; blockMesh.instanceMatrix.needsUpdate = true;
+        }
+        else if(currentPower.type === 'slime') {
+            spawnSlime(currentPower.val, new THREE.Vector3(cPos.x, 10, cPos.z), false);
+        }
+        else if(currentPower.type === 'meteor') { 
+            const mMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(1.5, 1), new THREE.MeshBasicMaterial({ color: 0xff3300 })); mMesh.position.set(cPos.x, 50, cPos.z); scene.add(mMesh); meteors.push({ mesh: mMesh, pos: mMesh.position }); 
+        }
+        else if(currentPower.type === 'virus') { 
+            let infectedAny = false; slimes.forEach(s => { if(s.pos.distanceTo(cPos) < 5) { s.isInfected = true; infectedAny = true; }});
+            if(infectedAny) spawnSparks(cPos, 30, 0x33ff00);
+        }
+    }
+
+    function spawnSlime(species, pos, isKnight = false) {
+        if(slimes.length >= CONF.MAX_SLIMES) return;
+        // 增加白色數值
+        const hpVals = [100, 150, 100, 100, 100, 120];
+        const baseColors = [0x8bc34a,0xf44336,0x03a9f4,0xffeb3b,0x9c27b0,0xeeeeee];
+        const knightColors = [0x2e7d32,0xb71c1c,0x01579b,0xfbc02d,0x4a148c,0x9e9e9e];
+        slimes.push({
+            species, isKnight, hp: isKnight ? hpVals[species]*2.5 : hpVals[species], energy: isKnight?200:80,
+            pos: pos.clone(), vel: new THREE.Vector3(), rotY: Math.random() * Math.PI * 2,
+            baseColor: new THREE.Color(isKnight ? knightColors[species] : baseColors[species]),
+            renderColor: new THREE.Color(), feedCd: 0, splitCd: 0, stateTimer: Math.random()*20, squish: 1.0,
+            isBoosted: false, isInfected: false, aiState: 'HUNT', nestTimer: 0, isGarrison: false, isDead: false,
+            age: 0 
+        });
+    }
+
+    function spawnSparks(pos, count, color) {
+        let spawned = 0;
+        for(let i=0; i<sparks.length; i++) {
+            if(sparks[i].life <= 0) {
+                sparks[i].pos.copy(pos); sparks[i].life = 1.0; sparks[i].vel.set(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize().multiplyScalar(Math.random()*0.4 + 0.1);
+                sparks[i].color.setHex(color); if(++spawned >= count) break;
+            }
+        }
+    }
+
+    function animate() {
+        requestAnimationFrame(animate); frameCount++;
+
+        // WASD 全方位平移
+        const camDir = new THREE.Vector3(); camera.getWorldDirection(camDir);
+        const rightDir = new THREE.Vector3().crossVectors(camDir, new THREE.Vector3(0,1,0)).normalize();
+        const lookDir = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), rightDir).normalize(); 
+
+        if(keys.w) { camera.position.addScaledVector(lookDir, 0.4); controls.target.addScaledVector(lookDir, 0.4); }
+        if(keys.s) { camera.position.addScaledVector(lookDir, -0.4); controls.target.addScaledVector(lookDir, -0.4); }
+        if(keys.a) { camera.position.addScaledVector(rightDir, -0.4); controls.target.addScaledVector(rightDir, -0.4); }
+        if(keys.d) { camera.position.addScaledVector(rightDir, 0.4); controls.target.addScaledVector(rightDir, 0.4); }
+        controls.update(); 
+
+        // 游標
+        raycaster.setFromCamera(mouse, camera); const intersect = new THREE.Vector3(); raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), intersect);
+        if (intersect) {
+            cursor.position.x += (intersect.x - cursor.position.x) * 0.2; cursor.position.z += (intersect.z - cursor.position.z) * 0.2;
+            const gx = Math.round((cursor.position.x + MAP_OFFSET) / CONF.SIZE), gz = Math.round((cursor.position.z + MAP_OFFSET) / CONF.SIZE);
+            if(gx>=0 && gx<CONF.GRID && gz>=0 && gz<CONF.GRID) cursor.position.y += ((blocks[gz * CONF.GRID + gx].pos.y + 0.5) - cursor.position.y) * 0.2;
+        }
+
+        const dummy = new THREE.Object3D();
+
+        if(weatherState > 0) { const pos = weatherPoints.geometry.attributes.position.array; const spd = weatherState===1?0.8:0.1; for(let i=1; i<pos.length; i+=3) { pos[i]-=spd; if(pos[i]<-5) pos[i]=40; } weatherPoints.geometry.attributes.position.needsUpdate = true; }
+        for(let i = meteors.length - 1; i >= 0; i--) {
+            const m = meteors[i]; m.pos.y -= 1.5; m.mesh.position.copy(m.pos); spawnSparks(m.pos, 3, 0xff5500); 
+            if(m.pos.y <= 0) { 
+                spawnSparks(m.pos, 80, 0xff0000);
+                blocks.forEach((b, bIdx) => { if(b.pos.distanceTo(m.pos) < 6) { b.type=0; b.yStep=Math.max(-1, b.yStep-1); b.pos.y=b.yStep*CONF.SIZE; updateBlockColor(bIdx, 0); dummy.position.copy(b.pos); dummy.updateMatrix(); blockMesh.setMatrixAt(bIdx, dummy.matrix); }});
+                if(blockMesh.instanceColor) blockMesh.instanceColor.needsUpdate = true; blockMesh.instanceMatrix.needsUpdate = true;
+                for(let ni = nests.length-1; ni>=0; ni--) if(nests[ni].pos.distanceTo(m.pos) < 7) nests.splice(ni, 1);
+                slimes.forEach(s => { if(s.pos.distanceTo(m.pos) < 8) { s.vel.add(new THREE.Vector3().copy(s.pos).sub(m.pos).normalize().multiplyScalar(4.0)); s.hp -= 100; }});
+                scene.remove(m.mesh); meteors.splice(i, 1);
+            }
+        }
+
+        // ================= 史萊姆 AI與人口普查 =================
+        let cnt = [0,0,0,0,0,0]; // 加入第6種
+        for(let i=0; i<slimes.length; i++) { if(!slimes[i].isDead) cnt[slimes[i].species]++; }
+        for(let i=0; i<6; i++) uiCount[i].innerText = cnt[i];
+
+        for(let i = slimes.length - 1; i >= 0; i--) {
+            const s = slimes[i]; 
+            if(s.isDead) continue;
+            
+            s.age++; 
+            const isJuvenile = !s.isKnight && s.age < 1200;
+
+            s.feedCd > 0 ? s.feedCd-- : 0; s.splitCd > 0 ? s.splitCd-- : 0;
+            const gx = Math.round((s.pos.x + MAP_OFFSET) / CONF.SIZE), gz = Math.round((s.pos.z + MAP_OFFSET) / CONF.SIZE), blockIdx = gz * CONF.GRID + gx;
+            const currentBlock = (blocks[blockIdx] && gx>=0 && gx<CONF.GRID && gz>=0 && gz<CONF.GRID) ? blocks[blockIdx] : null;
+
+            // 病毒
+            if(s.isInfected) {
+                s.hp -= 0.5; s.squish += (0.8 - s.squish) * 0.5; if(Math.random() < 0.05) spawnSparks(s.pos, 1, 0x33ff00);
+                if(currentBlock && currentBlock.type === 2) { s.isInfected = false; s.hp += 30; spawnSparks(s.pos, 5, 0x00e5ff); }
+            }
+
+            // ⚪ 白史萊姆特性：淨化周圍病毒
+            if(s.species === 5 && s.feedCd <= 0) {
+                slimes.forEach(other => {
+                    if(other.isInfected && !other.isDead && s.pos.distanceTo(other.pos) < 4) {
+                        other.isInfected = false; // 治癒
+                        s.energy = Math.min(s.energy + 20, 150); // 吸收病毒能量
+                        s.feedCd = 10;
+                        spawnSparks(other.pos, 8, 0xffffff); // 神聖白光
+                    }
+                });
+            }
+
+            s.isBoosted = false; let myNest = null;
+            nests.forEach(n => { 
+                if(n.species === s.species && n.pos.distanceTo(s.pos) < n.radius) { 
+                    s.isBoosted = true; myNest = n; n.ageDownCount = Math.max(n.ageDownCount, 1200); 
+                }
+            });
+            
+            if(myNest && s.species !== 1 && !s.isKnight) {
+                s.nestTimer++;
+                if(s.nestTimer > 300) { s.isGarrison = true; myNest.garrisonCount++; myNest.ageDownCount = Math.min(myNest.ageDownCount + 2, 2400); }
+            } else {
+                s.nestTimer = Math.max(0, s.nestTimer - 1);
+                if(s.nestTimer === 0) s.isGarrison = false;
+            }
+
+            let energyLoss = s.isKnight ? 0.04 : (s.species===3?0.03:0.015);
+            if(s.isBoosted) energyLoss *= 0.5; 
+            s.energy -= energyLoss;
+            if(s.energy <= 0 || s.hp <= 0) { s.isDead = true; spawnSparks(s.pos, 5, s.isInfected?0x33ff00:s.baseColor.getHex()); continue; }
+
+            const isHungryRed = (s.species === 1 && s.energy < 75);
+            if(s.hp < (s.isKnight?75:25) || s.isInfected) s.aiState = 'FLEE'; else if(s.hp < (s.isKnight?150:50)) s.aiState = 'RETREAT'; else s.aiState = 'HUNT';
+
+            // 地形進食
+            if(currentBlock) {
+                if(currentBlock.type === 2 && !s.isInfected) { 
+                    if(s.species===1||s.species===4) s.hp -= 0.5; // 紅紫怕水
+                    if(s.species===2) s.hp = Math.min(s.hp+0.5, s.isKnight?400:100); 
+                }
+                if(s.feedCd <= 0 && s.aiState !== 'FLEE') {
+                    if((s.species===0||s.species===3)&&currentBlock.type === 1) { currentBlock.type=0; updateBlockColor(blockIdx,0); if(blockMesh.instanceColor) blockMesh.instanceColor.needsUpdate=true; s.energy=Math.min(s.energy+40,150); s.hp=Math.min(s.hp+10,s.isKnight?400:100); s.feedCd=20; spawnSparks(s.pos,2,0x4CAF50); }
+                    else if(s.species===4&&currentBlock.type === 3) { currentBlock.yStep--; currentBlock.pos.y = currentBlock.yStep * CONF.SIZE; if(currentBlock.yStep < 1) { currentBlock.type = 0; updateBlockColor(blockIdx, 0); if(blockMesh.instanceColor) blockMesh.instanceColor.needsUpdate = true; } dummy.position.copy(currentBlock.pos); dummy.updateMatrix(); blockMesh.setMatrixAt(blockIdx, dummy.matrix); blockMesh.instanceMatrix.needsUpdate = true; s.energy=Math.min(s.energy+50,150); s.feedCd=60; spawnSparks(s.pos,3,0x9c27b0); }
+                    else if(s.species===5&&currentBlock.type === 2) { // ⚪白史萊姆喝水
+                        currentBlock.type=0; currentBlock.pos.y += CONF.SIZE*0.3; updateBlockColor(blockIdx,0); if(blockMesh.instanceColor) blockMesh.instanceColor.needsUpdate=true;
+                        dummy.position.copy(currentBlock.pos); dummy.updateMatrix(); blockMesh.setMatrixAt(blockIdx, dummy.matrix); blockMesh.instanceMatrix.needsUpdate = true; 
+                        s.energy=Math.min(s.energy+40,150); s.hp=Math.min(s.hp+10,s.isKnight?400:120); s.feedCd=30; spawnSparks(s.pos,2,0xffffff);
+                    }
+                }
+            }
+
+            // 戰鬥 (包含幼年削弱與 30% 爆擊)
+            let baseDmg = (s.species===1 ? (isHungryRed ? 30 : 60) : 40) * (s.isKnight?2:1) * (s.isBoosted?1.3:1);
+            if(isJuvenile) baseDmg *= 0.5;
+
+            for(let j = slimes.length - 1; j >= 0; j--) {
+                if(i === j) continue; const prey = slimes[j]; if(prey.isDead) continue; const dist = s.pos.distanceTo(prey.pos);
+                if(dist < 0.8 && s.feedCd <= 0 && s.species !== prey.species) {
+                    // 紅打所有 或 藍打紅
+                    if((s.species===1 && prey.species!==1) || (s.species===2 && prey.species===1)) {
+                        let isCrit = Math.random() < 0.3; 
+                        let finalDmg = baseDmg * (isCrit ? 2 : 1);
+                        prey.hp -= finalDmg; 
+                        s.energy = Math.min(s.energy+50,150); s.feedCd = 20; 
+                        spawnSparks(prey.pos, isCrit?10:5, isCrit?0xffffff:prey.baseColor.getHex()); 
+                        
+                        if(prey.species === 4 && prey.hp <= 0) {
+                            prey.isDead = true; s.isInfected = true; spawnSparks(s.pos, 20, 0x9c27b0); 
+                        } 
+                        else if((prey.species===0||prey.species===3) && prey.energy>40 && prey.hp>0) { 
+                            prey.energy-=20; s.hp-=20; s.vel.add(new THREE.Vector3().copy(s.pos).sub(prey.pos).normalize().multiplyScalar(0.4)); spawnSparks(s.pos,3,prey.baseColor.getHex()); 
+                        } 
+                    }
+                }
+            }
+
+            // 繁殖
+            let currentPop = cnt[s.species];
+            let canBreeding = !isJuvenile; 
+            let splitEnergyNeeded = s.isGarrison ? 90 : CONF.ENERGY_SPLIT;
+            let splitCdTime = s.isGarrison ? 300 : 600; 
+
+            if(currentPop > 200) canBreeding = false; 
+            else if(currentPop > 100) splitCdTime *= 2; 
+
+            if(canBreeding && !s.isKnight && s.energy >= splitEnergyNeeded && s.splitCd <= 0 && s.aiState === 'HUNT') {
+                let environmentalCheck = (s.species !== 0 || s.isGarrison); 
+                if(s.species === 0 && !s.isGarrison) {
+                    let nearbyGrass=0; for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++) { let b=blocks[(gz+dz)*CONF.GRID+(gx+dx)]; if(b&&b.type===1)nearbyGrass++; }
+                    if(nearbyGrass>=3) environmentalCheck=true;
+                }
+                if(environmentalCheck) { s.energy -= (s.isGarrison?60:90); s.splitCd = splitCdTime; spawnSlime(s.species, s.pos, false); spawnSparks(s.pos,5,0xffffff); }
+            }
+
+            // 轉向 AI 與 地形限制
+            s.stateTimer--;
+            if(s.stateTimer <= 0 && s.pos.y - (currentBlock?currentBlock.pos.y:0) < 0.6) {
+                if(s.isGarrison && myNest && s.pos.distanceTo(myNest.pos) > myNest.radius * 0.8) {
+                    s.rotY = Math.atan2(myNest.pos.x - s.pos.x, myNest.pos.z - s.pos.z) + (Math.random()-0.5);
+                }
+                else if(s.aiState === 'FLEE') {
+                    let enemy = slimes.filter(o => !o.isDead && o.species!==s.species && o.species!==5 && o.pos.distanceTo(s.pos)<8)[0];
+                    if(enemy) s.rotY = Math.atan2(s.pos.x-enemy.pos.x, s.pos.z-enemy.pos.z); else s.rotY += (Math.random()-0.5)*2;
+                } 
+                else if(s.aiState === 'RETREAT') {
+                    let nest = nests.filter(n=>n.species===s.species).sort((a,b)=>a.pos.distanceTo(s.pos)-b.pos.distanceTo(s.pos))[0];
+                    if(nest) s.rotY = Math.atan2(nest.pos.x-s.pos.x, nest.pos.z-s.pos.z); else s.rotY += (Math.random()-0.5)*2;
+                } 
+                else if(s.species === 1 || s.species === 2) { 
+                    let target=null, closest=999; let sightRange = isHungryRed ? 5 : 12; 
+                    slimes.forEach(o => { if(!o.isDead && ((s.species===1&&o.species!==1)||(s.species===2&&o.species===1))) { let d=s.pos.distanceTo(o.pos); if(d<sightRange&&d<closest){closest=d;target=o;}}});
+                    if(target) s.rotY = Math.atan2(target.pos.x-s.pos.x, target.pos.z-s.pos.z); else s.rotY += (Math.random()-0.5)*2;
+                } 
+                else if(s.species === 5) { // 白史萊姆找病人
+                    let target=null, closest=999; 
+                    slimes.forEach(o => { if(!o.isDead && o.isInfected) { let d=s.pos.distanceTo(o.pos); if(d<15&&d<closest){closest=d;target=o;}}});
+                    if(target) s.rotY = Math.atan2(target.pos.x-s.pos.x, target.pos.z-s.pos.z); else s.rotY += (Math.random()-0.5)*2;
+                }
+                else s.rotY += (Math.random()-0.5)*2; 
+
+                const lookStep = CONF.SIZE * 1.5;
+                const nextX = s.pos.x + Math.sin(s.rotY) * lookStep, nextZ = s.pos.z + Math.cos(s.rotY) * lookStep;
+                const nxG = Math.round((nextX + MAP_OFFSET) / CONF.SIZE), nzG = Math.round((nextZ + MAP_OFFSET) / CONF.SIZE);
+                let canPass = false;
+                if(nxG>=0 && nxG<CONF.GRID && nzG>=0 && nzG<CONF.GRID) {
+                    const fBlock = blocks[nzG * CONF.GRID + nxG];
+                    if(fBlock && Math.abs(fBlock.pos.y - (currentBlock?currentBlock.pos.y:0)) < CONF.SIZE * 2.5) { 
+                        canPass = true; 
+                        if((s.species===0 || s.species===3) && fBlock.type===3) canPass = false; // 綠黃不過山
+                        if(s.species===4 && fBlock.type===2) canPass = false; // 紫不下河
+                        if(s.species===5) canPass = true; // ⚪白史萊姆無視地形限制(懸浮)
+                    }
+                }
+                if(!canPass) s.rotY += Math.PI; 
+
+                let speed = (s.species===3?0.3:0.15) * CONF.SPEED_FACTOR * (s.isKnight?1.3:1) * (weatherState===2?0.5:1) * (s.aiState==='FLEE'?1.5:1); 
+                if(s.isGarrison) speed *= 0.5; 
+                if(isJuvenile) speed *= 0.5; 
+                let jump = (s.species===3?0.35:0.25) * CONF.SPEED_FACTOR * (s.isKnight?1.2:1);
+                
+                s.vel.x = Math.sin(s.rotY) * speed; s.vel.z = Math.cos(s.rotY) * speed; s.vel.y = jump;
+                s.stateTimer = (s.species===3?15:30) + Math.random()*20; s.squish = 0.6; 
+            }
+
+            s.vel.y -= 0.015; s.pos.add(s.vel);
+            if(s.pos.x > BOUNDARY) { s.pos.x = BOUNDARY; s.vel.x *= -1; s.rotY += Math.PI; }
+            if(s.pos.x < -BOUNDARY) { s.pos.x = -BOUNDARY; s.vel.x *= -1; s.rotY += Math.PI; }
+            if(s.pos.z > BOUNDARY) { s.pos.z = BOUNDARY; s.vel.z *= -1; s.rotY += Math.PI; }
+            if(s.pos.z < -BOUNDARY) { s.pos.z = -BOUNDARY; s.vel.z *= -1; s.rotY += Math.PI; }
+
+            let targetY = 0; const snx = Math.round((s.pos.x+MAP_OFFSET)/CONF.SIZE), snz = Math.round((s.pos.z+MAP_OFFSET)/CONF.SIZE);
+            if(snx>=0 && snx<CONF.GRID && snz>=0 && snz<CONF.GRID) { 
+                const b = blocks[snz * CONF.GRID + snx]; 
+                if(b) { 
+                    targetY = b.pos.y + CONF.SIZE/2 + (s.isKnight?0.3:0.2); 
+                    if(b.type===2 && s.species!==5) targetY-=0.2; // ⚪白色懸浮不泡水
+                } 
+            }
+            if(s.pos.y < targetY) { s.pos.y=targetY; s.vel.x*=0.7; s.vel.z*=0.7; s.vel.y=0; s.squish += (1.0-s.squish)*0.2; } else { s.squish += (1.0-s.squish)*0.1; }
+
+            s.renderColor.copy(s.baseColor); 
+            if(s.isInfected) s.renderColor.lerp(new THREE.Color(0x33ff00), Math.sin(frameCount*0.2)*0.5+0.5);
+            else if(s.isGarrison) s.renderColor.lerp(new THREE.Color(0xffffff), 0.2); 
+        }
+
+        slimes = slimes.filter(s => !s.isDead);
+
+        // ================= 營地文明 =================
+        const towerDummy = new THREE.Object3D(); const nestDummy = new THREE.Object3D();
+        for(let i = nests.length - 1; i >= 0; i--) {
+            const n = nests[i]; n.life++; n.ageDownCount -= (weatherState===2?3:1); 
+
+            if(n.level === 1 && n.garrisonCount >= 3) { n.level = 2; n.radius = CONF.NEST_BASE_RADIUS * 1.5; spawnSparks(n.pos, 20, 0xffff00); }
+            if(n.level === 2 && n.garrisonCount >= 6) {
+                let sacrificeIdx = slimes.findIndex(s => !s.isDead && s.species === n.species && s.isGarrison && !s.isKnight);
+                if(sacrificeIdx !== -1) {
+                    spawnSparks(slimes[sacrificeIdx].pos, 30, 0xffaa00); slimes[sacrificeIdx].hp = 0; slimes[sacrificeIdx].isDead = true;
+                    n.level = 3; n.radius = CONF.NEST_BASE_RADIUS * 2.0; n.hasTower = true;
+                }
+            }
+
+            if(n.garrisonCount >= 3 && n.knightSpawning <= 0 && n.life >= 600) { 
+                let sacrificeIdx = slimes.findIndex(s => !s.isDead && s.species === n.species && s.isGarrison && !s.isKnight);
+                if(sacrificeIdx !== -1 && cnt[n.species] < CONF.MAX_SLIMES*0.15) {
+                    let sacrificePos = slimes[sacrificeIdx].pos.clone(); spawnSparks(sacrificePos, 15, nestColors[n.species]);
+                    slimes[sacrificeIdx].hp = 0; slimes[sacrificeIdx].isDead = true; 
+                    spawnSlime(n.species, sacrificePos.add(new THREE.Vector3(0,3,0)), true); n.knightSpawning = CONF.NEST_SPAWN_KNIGHT; 
+                }
+            }
+            if(n.knightSpawning > 0) n.knightSpawning--;
+
+            if(n.hasTower) {
+                n.towerCd--;
+                if(n.towerCd <= 0) {
+                    let target = slimes.find(s => !s.isDead && s.species !== n.species && s.pos.distanceTo(n.pos) < n.radius * 2);
+                    if(target) {
+                        let isCrit = Math.random() < 0.3; target.hp -= (isCrit ? 60 : 30); n.towerCd = 40; 
+                        const towerTop = n.pos.clone().add(new THREE.Vector3(0, 2, 0)); const tDir = new THREE.Vector3().copy(target.pos).sub(towerTop).normalize();
+                        for(let k=1; k<=5; k++) spawnSparks(towerTop.clone().add(tDir.clone().multiplyScalar(k*(target.pos.distanceTo(towerTop)/5))), 1, nestColors[n.species]);
+                        spawnSparks(target.pos, 5, isCrit ? 0xffffff : 0xffaa00); 
+                    }
+                }
+            }
+
+            nestDummy.position.copy(n.pos); nestDummy.position.y += 0.2; nestDummy.scale.set(n.radius/CONF.NEST_BASE_RADIUS, 1, n.radius/CONF.NEST_BASE_RADIUS);
+            nestDummy.updateMatrix(); nestMesh.setMatrixAt(i, nestDummy.matrix); nestMesh.setColorAt(i, new THREE.Color(nestColors[n.species]));
+
+            if(n.hasTower) { towerDummy.position.copy(n.pos); towerDummy.scale.setScalar(1); towerDummy.updateMatrix(); towerMesh.setMatrixAt(i, towerDummy.matrix); towerMesh.setColorAt(i, new THREE.Color(nestColors[n.species])); } 
+            else { towerDummy.scale.setScalar(0.001); towerDummy.position.y = -100; towerDummy.updateMatrix(); towerMesh.setMatrixAt(i, towerDummy.matrix); }
+
+            if(n.ageDownCount <= 0) nests.splice(i, 1);
+        }
+        
+        for(let i=nests.length; i<50; i++) { 
+            nestDummy.scale.setScalar(0.001); nestDummy.position.y = -100; nestDummy.updateMatrix(); nestMesh.setMatrixAt(i, nestDummy.matrix); 
+            towerDummy.scale.setScalar(0.001); towerDummy.position.y = -100; towerDummy.updateMatrix(); towerMesh.setMatrixAt(i, towerDummy.matrix);
+        }
+        nestMesh.instanceMatrix.needsUpdate = true; if(nestMesh.instanceColor) nestMesh.instanceColor.needsUpdate = true;
+        towerMesh.instanceMatrix.needsUpdate = true; if(towerMesh.instanceColor) towerMesh.instanceColor.needsUpdate = true;
+
+        if(frameCount % 10 === 0) {
+            for(let sp=0; sp<6; sp++) {
+                if(nests.filter(n=>n.species===sp).length >= 5) continue; 
+                slimes.filter(s=>s.species===sp&&!s.isKnight&&!s.isDead).forEach(s => {
+                    const gx = Math.round((s.pos.x+MAP_OFFSET)/CONF.SIZE), gz = Math.round((s.pos.z+MAP_OFFSET)/CONF.SIZE), b = blocks[gz * CONF.GRID + gx]; if(!b) return;
+                    let isSuitable = false;
+                    if(sp===0 || sp===3) isSuitable = (b.type===1); else if(sp===2||sp===5) isSuitable = (b.pos.y > 2*CONF.SIZE); else if(sp===4) isSuitable = (b.type===3); else isSuitable = (b.type===0); 
+                    if(isSuitable && slimes.filter(m=>m.species===sp && !m.isDead && m.pos.distanceTo(s.pos)<3).length >= 8 && nests.filter(n=>n.pos.distanceTo(s.pos)<CONF.NEST_BASE_RADIUS*1.5).length === 0) {
+                        nests.push({ species: sp, pos: s.pos.clone().setY(b.pos.y), life: 0, ageDownCount: 1200, knightSpawning: 0, garrisonCount: 0, level: 1, radius: CONF.NEST_BASE_RADIUS, hasTower: false, towerCd: 0 }); spawnSparks(s.pos, 15, nestColors[sp]);
+                    }
+                });
+            }
+        }
+
+        if(weatherState !== 2) { 
+            let spreadRate=weatherState===1?40:15; 
+            for(let i=0; i<spreadRate; i++) { 
+                const idx=Math.floor(Math.random()*blocks.length); 
+                if(blocks[idx].type===1){ 
+                    const nIdx=[idx-1,idx+1,idx-CONF.GRID,idx+CONF.GRID][Math.floor(Math.random()*4)]; 
+                    if(blocks[nIdx]&&blocks[nIdx].type===0&&Math.random()<0.1){ blocks[nIdx].type=1; updateBlockColor(nIdx,1); if(blockMesh.instanceColor) blockMesh.instanceColor.needsUpdate=true; } 
+                } 
+            }
+        }
+
+        for(let i=0; i<CONF.MAX_SLIMES; i++) { 
+            if(i < slimes.length) { 
+                const s=slimes[i]; dummy.position.copy(s.pos); dummy.rotation.set(0, s.rotY, 0); 
+                const isJuvenile = !s.isKnight && s.age < 1200;
+                const sz=s.isKnight?1.6:(isJuvenile?0.6:1.0); 
+                dummy.scale.set(sz/s.squish, sz*s.squish, sz/s.squish); slimeMesh.setColorAt(i, s.renderColor); 
+            } else { dummy.scale.setScalar(0.001); dummy.position.y = -10; } 
+            dummy.updateMatrix(); slimeMesh.setMatrixAt(i, dummy.matrix); 
+        }
+        slimeMesh.instanceMatrix.needsUpdate=true; if(slimeMesh.instanceColor) slimeMesh.instanceColor.needsUpdate=true;
+
+        for(let i=0; i<sparks.length; i++) { 
+            if(sparks[i].life > 0) { 
+                sparks[i].pos.add(sparks[i].vel); sparks[i].vel.y -= 0.01; sparks[i].life -= 0.04; dummy.position.copy(sparks[i].pos); dummy.scale.setScalar(sparks[i].life * 1.5); dummy.updateMatrix(); sparkMesh.setMatrixAt(i, dummy.matrix); sparkMesh.setColorAt(i, sparks[i].color); 
+            } else { dummy.scale.setScalar(0.001); dummy.updateMatrix(); sparkMesh.setMatrixAt(i, dummy.matrix); } 
+        }
+        sparkMesh.instanceMatrix.needsUpdate=true; if(sparkMesh.instanceColor) sparkMesh.instanceColor.needsUpdate=true;
+        
+        renderer.render(scene, camera);
+    }
+</script>
+</body>
+</html>
